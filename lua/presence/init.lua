@@ -85,8 +85,7 @@ function Presence:setup(...)
 
     -- Initialize logger
     self:set_option("log_level", nil, false)
-    -- self.log = log:init({ level = options.log_level })
-    self.log = log:init({ level = "debug" })
+    self.log = log:init({ level = options.log_level })
 
     -- Get operating system information including path separator
     -- http://www.lua.org/manual/5.3/manual.html#pdf-package.config
