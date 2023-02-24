@@ -66,6 +66,7 @@ local serpent = require("deps.serpent")
 local file_explorers = require("presence.file_explorers")
 local default_file_assets = require("presence.file_assets")
 local plugin_managers = require("presence.plugin_managers")
+local dashboards = require("presence.dashboards")
 local Discord = require("presence.discord")
 
 function Presence:setup(...)
@@ -126,6 +127,7 @@ function Presence:setup(...)
     self:set_option("file_explorer_text", "Browsing %s")
     self:set_option("git_commit_text", "Committing changes")
     self:set_option("plugin_manager_text", "Managing plugins")
+    self:set_option("dashboard_text", "Viewing Dashboard")
     self:set_option("reading_text", "Reading %s")
     self:set_option("workspace_text", "Working on %s")
     self:set_option("line_number_text", "Line %s out of %s")
@@ -479,11 +481,14 @@ function Presence:get_status_text(filename)
     local file_explorer = file_explorers[vim.bo.filetype:match "[^%d]+"]
         or file_explorers[(filename or ""):match "[^%d]+"]
     local plugin_manager = plugin_managers[vim.bo.filetype]
+    local dashboard = dashboards[vim.bo.filetype]
 
     if file_explorer then
         return self:format_status_text("file_explorer", file_explorer)
     elseif plugin_manager then
         return self:format_status_text("plugin_manager", plugin_manager)
+    elseif dashboard then
+        return self:format_status_text("dashboard", dashboard)
     end
 
     if not filename or filename == "" then return nil end
