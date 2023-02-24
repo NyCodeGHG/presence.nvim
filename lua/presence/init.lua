@@ -85,7 +85,8 @@ function Presence:setup(...)
 
     -- Initialize logger
     self:set_option("log_level", nil, false)
-    self.log = log:init({ level = options.log_level })
+    -- self.log = log:init({ level = options.log_level })
+    self.log = log:init({ level = "debug" })
 
     -- Get operating system information including path separator
     -- http://www.lua.org/manual/5.3/manual.html#pdf-package.config
@@ -136,6 +137,7 @@ function Presence:setup(...)
     self:set_option("show_time", true)
     -- File assets options
     self:set_option("file_assets", {})
+    vim.g.presence_enabled = true
     for name, asset in pairs(default_file_assets) do
         if not self.options.file_assets[name] then
             self.options.file_assets[name] = asset
@@ -177,6 +179,17 @@ function Presence:setup(...)
 
     -- Register self to any remote Neovim instances
     self:register_self()
+
+    vim.api.nvim_create_user_command("PresenceDisable", function ()
+      self:disable()
+    end, { desc = "Disable Rich Presence"})
+    vim.api.nvim_create_user_command("PresenceEnable", function ()
+      self:enable()
+    end, { desc = "Enable Rich Presence"})
+
+    vim.schedule(function ()
+       self:update()
+    end)
 
     return self
 end
@@ -272,6 +285,21 @@ function Presence:cancel()
 
         self.log:info("Canceled Discord presence")
     end)
+end
+
+function Presence:disable()
+    self.discord:set_activity(nil, function (err)
+      if err then
+        self.log:error(string.format("Failed to cancel activity in Discord: %s", err))
+        return
+      end
+    end)
+    vim.g.presence_enabled = false
+end
+
+function Presence:enable()
+    vim.g.presence_enabled = true
+    self:update()
 end
 
 -- Call a command on a remote Neovim instance at the provided IPC path
@@ -781,7 +809,7 @@ function Presence:update_for_buffer(buffer, should_debounce)
 
     -- Avoid unnecessary updates if the previous activity was for the current buffer
     -- (allow same-buffer updates when line numbers are enabled)
-    if self.options.enable_line_number == 0 and self.last_activity.file == buffer then
+    if self.options.enable_line_number == 0 and self.last_activity.file == buffer and buffer ~= "" then
         self.log:debug(string.format("Activity already set for %s, skipping...", buffer))
         return
     end
@@ -964,7 +992,7 @@ Presence.update = Presence.discord_event(function(self, buffer, should_debounce)
         return
     end
 
-    if buffer then
+    if buffer and buffer ~= "" then
         self:update_for_buffer(buffer, should_debounce)
     else
         vim.schedule(function()

@@ -150,6 +150,9 @@ end
 
 -- Call to set the Neovim activity to Discord
 function Discord:set_activity(activity, on_response)
+    if not vim.g.presence_enabled  then
+        return
+    end
     local payload = {
         cmd = "SET_ACTIVITY",
         nonce = self.generate_uuid(),
